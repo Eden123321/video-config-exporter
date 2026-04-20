@@ -79,22 +79,29 @@ class VideoConfigExporter:
         json_string = json.dumps(config, separators=(',', ':'), ensure_ascii=False)
 
         # 保存到 output 目录，自动递增编号
-        script_dir = os.path.dirname(os.path.realpath(__file__))
-        output_dir = os.path.join(script_dir, "..", "output")
-        output_dir = os.path.normpath(output_dir)
+        # 优先使用 ComfyUI 标准 output 目录
+        possible_paths = [
+            os.path.join(os.getcwd(), "output"),
+            "/opt/tiger/ComfyUI/ComfyUI/output",
+            "C:/aki1.7/ComfyUI-aki-v1.7/ComfyUI/output",
+            os.path.join(os.path.dirname(os.path.realpath(__file__)), "..", "output"),
+        ]
 
-        print(f"[VideoConfigExporter] script_dir: {script_dir}")
-        print(f"[VideoConfigExporter] output_dir: {output_dir}")
-        print(f"[VideoConfigExporter] output_dir exists: {os.path.exists(output_dir)}")
+        output_dir = None
+        for p in possible_paths:
+            p = os.path.normpath(p)
+            if os.path.exists(p) or os.access(os.path.dirname(p), os.W_OK):
+                output_dir = p
+                break
 
-        if not os.path.exists(output_dir):
-            os.makedirs(output_dir)
-            print(f"[VideoConfigExporter] created output_dir")
+        if output_dir is None:
+            output_dir = possible_paths[0]
+
+        os.makedirs(output_dir, exist_ok=True)
 
         # 查找已有文件的最新编号
         try:
             existing_files = [f for f in os.listdir(output_dir) if f.startswith(config_filename) and f.endswith('.json')]
-            print(f"[VideoConfigExporter] existing_files: {existing_files}")
             if existing_files:
                 numbers = []
                 for f in existing_files:
@@ -107,20 +114,22 @@ class VideoConfigExporter:
                 next_num = max(numbers) + 1 if numbers else 1
             else:
                 next_num = 1
-        except Exception as e:
-            print(f"[VideoConfigExporter] error listing files: {e}")
+        except:
             next_num = 1
 
         output_filename = f"{config_filename}{next_num:05d}.json"
         output_path = os.path.join(output_dir, output_filename)
-        print(f"[VideoConfigExporter] output_path: {output_path}")
 
         try:
             with open(output_path, 'w', encoding='utf-8') as f:
                 f.write(json_string)
-            print(f"[VideoConfigExporter] file saved successfully")
         except Exception as e:
-            print(f"[VideoConfigExporter] error saving file: {e}")
+            # 写入失败时尝试使用 temp 目录
+            import tempfile
+            temp_dir = tempfile.gettempdir()
+            output_path = os.path.join(temp_dir, output_filename)
+            with open(output_path, 'w', encoding='utf-8') as f:
+                f.write(json_string)
 
         return (json_string, config)
 
