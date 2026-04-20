@@ -1,16 +1,17 @@
 """
 ComfyUI 节点：视频配置导出器
-从 IMAGE 提取尺寸和帧数，生成 mask+rgb 布局的 config.json
+从 IMAGE 或 VIDEO 提取尺寸和帧数，生成 mask+rgb 布局的 config.json
 """
 
 import json
 import torch
 import numpy as np
+import cv2
 import os
 
 
 class VideoConfigExporter:
-    """从 IMAGE 获取信息并导出视频配置"""
+    """从 IMAGE 或 VIDEO 获取信息并导出视频配置"""
 
     @classmethod
     def INPUT_TYPES(cls):
@@ -34,9 +35,11 @@ class VideoConfigExporter:
         # images: torch.Tensor, shape (B, H, W, C) 或 (H, W, C)
         if isinstance(images, torch.Tensor):
             if images.ndim == 4:
+                # (B, H, W, C) -> 图像序列
                 frame_count = images.shape[0]
                 height, width = images.shape[1], images.shape[2]
             elif images.ndim == 3:
+                # (H, W, C) -> 单张图像
                 frame_count = 1
                 height, width = images.shape[0], images.shape[1]
             else:
@@ -79,28 +82,45 @@ class VideoConfigExporter:
         script_dir = os.path.dirname(os.path.realpath(__file__))
         output_dir = os.path.join(script_dir, "..", "output")
         output_dir = os.path.normpath(output_dir)
+
+        print(f"[VideoConfigExporter] script_dir: {script_dir}")
+        print(f"[VideoConfigExporter] output_dir: {output_dir}")
+        print(f"[VideoConfigExporter] output_dir exists: {os.path.exists(output_dir)}")
+
         if not os.path.exists(output_dir):
             os.makedirs(output_dir)
+            print(f"[VideoConfigExporter] created output_dir")
 
         # 查找已有文件的最新编号
-        existing_files = [f for f in os.listdir(output_dir) if f.startswith(config_filename) and f.endswith('.json')]
-        if existing_files:
-            numbers = []
-            for f in existing_files:
-                try:
-                    num_str = f.replace(config_filename, '').replace('.json', '')
-                    if num_str.isdigit():
-                        numbers.append(int(num_str))
-                except:
-                    pass
-            next_num = max(numbers) + 1 if numbers else 1
-        else:
+        try:
+            existing_files = [f for f in os.listdir(output_dir) if f.startswith(config_filename) and f.endswith('.json')]
+            print(f"[VideoConfigExporter] existing_files: {existing_files}")
+            if existing_files:
+                numbers = []
+                for f in existing_files:
+                    try:
+                        num_str = f.replace(config_filename, '').replace('.json', '')
+                        if num_str.isdigit():
+                            numbers.append(int(num_str))
+                    except:
+                        pass
+                next_num = max(numbers) + 1 if numbers else 1
+            else:
+                next_num = 1
+        except Exception as e:
+            print(f"[VideoConfigExporter] error listing files: {e}")
             next_num = 1
 
         output_filename = f"{config_filename}{next_num:05d}.json"
         output_path = os.path.join(output_dir, output_filename)
-        with open(output_path, 'w', encoding='utf-8') as f:
-            f.write(json_string)
+        print(f"[VideoConfigExporter] output_path: {output_path}")
+
+        try:
+            with open(output_path, 'w', encoding='utf-8') as f:
+                f.write(json_string)
+            print(f"[VideoConfigExporter] file saved successfully")
+        except Exception as e:
+            print(f"[VideoConfigExporter] error saving file: {e}")
 
         return (json_string, config)
 
