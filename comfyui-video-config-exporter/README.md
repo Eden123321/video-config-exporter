@@ -4,10 +4,10 @@ ComfyUI 自定义节点，用于从图像序列提取尺寸和帧数，生成 ma
 
 ## 安装
 
-将 `video_config_exporter.py` 复制到 ComfyUI 的 `custom_nodes` 目录：
+将整个目录复制到 ComfyUI 的 `custom_nodes` 目录：
 
 ```
-<ComfyUI>/custom_nodes/video_config_exporter.py
+<ComfyUI>/custom_nodes/comfyui-video-config-exporter/
 ```
 
 ## 使用
