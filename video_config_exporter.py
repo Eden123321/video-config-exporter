@@ -75,13 +75,30 @@ class VideoConfigExporter:
 
         json_string = json.dumps(config, separators=(',', ':'), ensure_ascii=False)
 
-        # 保存到 output 目录
+        # 保存到 output 目录，自动递增编号
         script_dir = os.path.dirname(os.path.realpath(__file__))
         output_dir = os.path.join(script_dir, "..", "output")
         output_dir = os.path.normpath(output_dir)
         if not os.path.exists(output_dir):
             os.makedirs(output_dir)
-        output_path = os.path.join(output_dir, f"{config_filename}.json")
+
+        # 查找已有文件的最新编号
+        existing_files = [f for f in os.listdir(output_dir) if f.startswith(config_filename) and f.endswith('.json')]
+        if existing_files:
+            numbers = []
+            for f in existing_files:
+                try:
+                    num_str = f.replace(config_filename, '').replace('.json', '')
+                    if num_str.isdigit():
+                        numbers.append(int(num_str))
+                except:
+                    pass
+            next_num = max(numbers) + 1 if numbers else 1
+        else:
+            next_num = 1
+
+        output_filename = f"{config_filename}{next_num:05d}.json"
+        output_path = os.path.join(output_dir, output_filename)
         with open(output_path, 'w', encoding='utf-8') as f:
             f.write(json_string)
 

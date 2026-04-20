@@ -1,0 +1,21 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//c/Users/Admin/.claude/**)",
+      "Bash(dir \"C:\\\\Users\\\\Admin\\\\.claude\")",
+      "Bash(git init *)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(gh repo *)",
+      "WebFetch(domain:github.com)",
+      "Bash(mkdir -p comfyui-video-config-exporter)",
+      "Bash(git mv *)",
+      "Bash(mv video_config_exporter.py __init__.py README.md .gitignore comfyui-video-config-exporter/)",
+      "Bash(git checkout *)",
+      "Bash(git clean *)",
+      "Bash(git push *)",
+      "Bash(git rm *)",
+      "Bash(git commit *)"
+    ]
+  }
+}
