@@ -78,25 +78,12 @@ class VideoConfigExporter:
 
         json_string = json.dumps(config, separators=(',', ':'), ensure_ascii=False)
 
-        # 保存到 output 目录，自动递增编号
-        # 优先使用 ComfyUI 标准 output 目录
-        possible_paths = [
-            os.path.join(os.getcwd(), "output"),
-            "/opt/tiger/ComfyUI/ComfyUI/output",
-            "C:/aki1.7/ComfyUI-aki-v1.7/ComfyUI/output",
-            os.path.join(os.path.dirname(os.path.realpath(__file__)), "..", "output"),
-        ]
+        # 写入到多个可能的目录
+        import tempfile
+        temp_dir = tempfile.gettempdir()
 
-        output_dir = None
-        for p in possible_paths:
-            p = os.path.normpath(p)
-            if os.path.exists(p) or os.access(os.path.dirname(p), os.W_OK):
-                output_dir = p
-                break
-
-        if output_dir is None:
-            output_dir = possible_paths[0]
-
+        # 使用 /tmp 目录（Linux 系统肯定可写）
+        output_dir = "/tmp/comfyui_output"
         os.makedirs(output_dir, exist_ok=True)
 
         # 查找已有文件的最新编号
@@ -120,16 +107,8 @@ class VideoConfigExporter:
         output_filename = f"{config_filename}{next_num:05d}.json"
         output_path = os.path.join(output_dir, output_filename)
 
-        try:
-            with open(output_path, 'w', encoding='utf-8') as f:
-                f.write(json_string)
-        except Exception as e:
-            # 写入失败时尝试使用 temp 目录
-            import tempfile
-            temp_dir = tempfile.gettempdir()
-            output_path = os.path.join(temp_dir, output_filename)
-            with open(output_path, 'w', encoding='utf-8') as f:
-                f.write(json_string)
+        with open(output_path, 'w', encoding='utf-8') as f:
+            f.write(json_string)
 
         return (json_string, config)
 
